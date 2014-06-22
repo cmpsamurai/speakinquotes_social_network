@@ -1,0 +1,122 @@
+{{extend 'layout.html'}}
+
+<div id="favConfirm" class="reveal-modal">
+     <h1>Confirm Unfavorite</h1>
+     <p>Do you really want to Unfavorite this Quote ??</p>
+     <p style="text-align:center;">
+     <a class="btn btn-navbar" style="width:100px;" onclick="ajax('{{=URL('favorite', args=(quote.id))}}', [],  ':eval');$('#favConfirm').trigger('reveal:close');"> {{=T('Yes')}}</a>
+     
+     <a class="btn btn-navbar" style="width:100px;" onclick="$('#favConfirm').trigger('reveal:close');"> {{=T('No')}}</a>
+     <a class="close-reveal-modal">&#215;</a>
+     </p>
+</div>
+
+
+
+
+<div style="width:70%;">
+
+ <table>
+ <tr>
+ <td style="width:250px;">
+ 	{{if db.quote_author(quote.author):}}
+ 	
+		{{if db.quote_author(quote.author).picture:}}
+			<img src="{{=URL('default','download',args=(db.quote_author(quote.author).picture))}}" style="width:100px;">
+		{{else:}}
+			<img src="{{=URL('static','images/question.png')}}" style="width:100px;" >
+		{{pass}}
+	{{else:}}
+	
+	{{if quote.is_user:}}
+		{{if quote.posted_by.profile_picture:}}
+				<img src="{{=URL('default','download',args=(db.auth_user(quote.posted_by).profile_picture))}}" style="width:100px;">
+		{{else:}}
+				<img src="{{=URL('static','images/question.png')}}" style="width:100px;" >
+		{{pass}}
+	{{pass}}
+	{{pass}}
+ 	</br>
+ 	<B>
+    {{if quote.is_user:}}
+        <b>
+		{{=T('Quote By User')+" : "}}
+		</b>
+		</br>
+		<strong>		
+		<a href="{{=URL('profile','index',args=(quote.posted_by))}}">
+					{{=name_of(quote.posted_by)}}
+		</a>
+		
+		</strong>
+	{{else:}}
+		{{=T('Quote By a Famous Author')+" : "}}
+	</br>
+		<strong> {{=quote.author}}</strong>
+	{{pass}}
+    </B>
+    </br>
+    </br>
+    <p >
+		
+		
+
+	{{if previous_vote==None:}}
+				<a class="btn btn-navbar" id="favorite" onclick="ajax('{{=URL('favorite', args=(quote.id))}}', [],  ':eval')"> {{=T('Favorite')}}</a>
+				{{else:}}
+				<a class="btn btn-navbar" id="favorite"  data-reveal-id="favConfirm">{{=T('Unfavorite')}}</a>
+				
+   {{pass}}
+	</p>
+ </td>
+
+ <td>
+
+
+
+	 
+	 
+ <section>
+ 	<article class="quote_article">
+ 		
+ 		<section>
+			
+ 			<p>{{=quote.body}}</p>
+ 			
+ 		</section>
+ 		<header>
+			{{if quote.is_user:}}
+			    <b>
+				{{=T('Quote By User')+" : "}}
+				</b>
+				<strong>- 
+				<a href="{{=URL('profile','index',args=(quote.posted_by))}}">
+					{{=name_of(quote.posted_by)}}
+				</a>
+				
+				
+				</strong>
+			{{else:}}
+				<strong>- {{=quote.author}}</strong>
+			{{pass}}
+ 			
+ 		</header>
+ 	
+ 	</article> 
+ </section> 	
+</td>
+
+</tr>
+</table>
+ <fieldset>
+ 
+ <legend>{{=T('Comments')}}</legend>
+ <section>
+       {{=LOAD('quotes','post.load',ajax=True,args=(request.args(0)))}}
+  </section>
+    
+</fieldset>
+
+
+</div>
+

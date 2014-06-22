@@ -1,0 +1,36 @@
+{{extend 'layout.html'}}
+{{for i in Quotes:}}
+{{if i==items_per_page: break}}
+<article class="post_listing">
+		<blockquote>
+		{{=A(Quotes[i]['body'],_href=URL(request.application ,'quotes','view',args=[Quotes[i]['id']],extension=False),)}}
+		</blockquote>
+        <footer>
+        <B>- 
+        {{if not (Quotes[i]['is_user']):}}
+        {{=Quotes[i]['author']}}
+        {{pass}}
+        </B>
+        </br>
+        Subcategory: 
+        {{=db.subcategory(Quotes[i]['subcategory']).name}}
+        </br>
+        <B>{{=T('Num of comments')+":"}}
+         {{if Quotes[i]['num_comments']==None:}}
+         {{="0"}}
+         {{else:}}
+         {{=str(Quotes[i]['num_comments'])}}
+         {{pass}}
+         </B>        </footer>
+</article>
+</br>
+{{pass}}
+
+{{if page:}}
+{{=A('Previous',_href=URL(args=[request.args[0],request.args[1],page-1]),cid=request.cid)}}
+{{pass}}
+
+{{if len(Quotes)>items_per_page:}}
+{{=A('Next',_href=URL(args=[request.args[0],request.args[1],page+1]),cid=request.cid)}}
+
+{{pass}}

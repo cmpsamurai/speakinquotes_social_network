@@ -1,0 +1,47 @@
+
+
+
+<div id="commentDeleteConfirm" class="reveal-modal">
+     <h1>Confirm Delete</h1>
+     <p>Do you really want to Delete this Comment ??</p>
+     <p style="text-align:center;">
+    
+     <script> 
+     var to_delete=-1;
+     function deleteComment()
+		 {
+		 var str="/SpeakInQuotes/quotes/delete_comment/"+to_delete;
+		 ajax(str, [],  ':eval');
+		 }
+     </script>
+     <a  class="btn btn-navbar" style="width:100px;" onclick="deleteComment();$('#commentDeleteConfirm').trigger('reveal:close');"> {{=T('Yes')}}</a>
+     
+     <a class="btn btn-navbar" style="width:100px;" onclick="$('#commentDeleteConfirm').trigger('reveal:close');"> {{=T('No')}}</a>
+     <a class="close-reveal-modal">&#215;</a>
+     </p>
+</div>
+
+
+{{for comment in quote_comments:}}
+
+
+<article class="comment_article">
+            <header>
+            <strong>
+            <a href="{{=URL('profile','index',args=[comment.posted_by],extension=False)}}">{{=name_of(comment.posted_by)}}</a>
+            </strong>
+            </header>
+            <section>
+            {{=comment.body}}
+            </section>
+            <footer>
+            	<i><b>{{=T('Posted : ')+pretty_date(comment.posted_on)}}</b></i>
+            	{{if comment.posted_by==me:}}
+					<a id="comment_delete-{{=comment.id}}" href="#" onclick="to_delete={{=comment.id}};"  data-reveal-id="commentDeleteConfirm"> {{=T('Delete')}}</a>
+            	{{pass}}
+            	
+            </footer>
+        </article>
+        </br>
+{{pass}}
+{{=comment_box}}

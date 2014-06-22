@@ -1,0 +1,33 @@
+{{extend 'layout.html'}}
+{{for i,row in enumerate(Quotes):}}
+{{if i==items_per_page: break}}
+<article class="post_listing">
+		<blockquote>
+        {{=A(row.fav_quote.body,_href=URL(request.application ,'quotes','view',args=[row.fav_quote.id],extension=False),)}}
+        </blockquote>
+        <footer>
+        <B>- 
+        {{if not (row.fav_quote.is_user):}}
+        {{=row.fav_quote.author}}
+        {{else:}}
+        {{=row.fav_quote.author}}
+        </br>
+        Quote by User : 
+        {{=A(name_of(row.fav_quote.posted_by),_href=URL('profile','index',args=[row.fav_quote.posted_by],extension=False),)}}
+        {{=name_of(row.fav_quote.posted_by)}}
+        
+        {{pass}}
+        </B>
+        </br>
+        </footer>
+</article>
+{{pass}}
+
+{{if page:}}
+{{=A('Previous',_href=URL(args=[request.args[0],page-1]),cid=request.cid)}}
+{{pass}}
+
+{{if len(Quotes)>items_per_page:}}
+{{=A('Next',_href=URL(args=[request.args[0],page+1]),cid=request.cid)}}
+
+{{pass}}

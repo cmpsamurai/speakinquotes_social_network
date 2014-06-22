@@ -1,0 +1,21 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.ValueError'> invalid literal for long() with base 10: 'tifa'"
+p3
+sS'layer'
+p4
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/connections.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a samples controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n## - call exposes all registered services (none by default)\n#########################################################################\n\n\n\n@auth.requires_login()    \ndef index():\n\tresponse.title=T("Manage Your Connections")\n\tresponse.subtitle=T("Manage Your Followings and Followers")\n\t\n\treturn locals()\n\n\n@auth.requires_login()    \ndef search():\n\tresponse.title=T("Search Users")\n\tresponse.subtitle=T("find your friends on SpeakInQuotes")\n\trows=  db((db.auth_user.id==request.args[0])).select()\n\tif not rows:\n\t\trows = db((db.auth_user.username==request.args[0])).select()\n\treturn dict(Users=rows)\n\t\n\t\n@auth.requires_login()\ndef List_Followers():\n    if len(request.args)>1: \n\t\tpage=int(request.args[1])\n    else: page=0\n    items_per_page=NUM_FRIENDS_INPAGE\n    limitby=(page*items_per_page,(page+1)*items_per_page+1)\n    rows = db((db.link.target==me)).select(limitby=limitby, orderby=~db.link.requested_on).as_dict()\n    return dict(Connections=rows,page=page,items_per_page=items_per_page)\n\n\n@auth.requires_login()\ndef List_Following():\n    if len(request.args)>1: \n\t\tpage=int(request.args[1])\n    else: page=0\n    items_per_page=NUM_FRIENDS_INPAGE\n    limitby=(page*items_per_page,(page+1)*items_per_page+1)\n    rows = db((db.link.origin==me)).select(limitby=limitby, orderby=~db.link.requested_on).as_dict()\n    return dict(Connections=rows,page=page,items_per_page=items_per_page)\n\n\nresponse._vars=response._caller(search)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+sS'traceback'
+p10
+S'Traceback (most recent call last):\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\restricted.py", line 212, in restricted\n    exec ccode in environment\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/connections.py", line 54, in <module>\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\globals.py", line 194, in <lambda>\n    self._caller = lambda f: f()\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\tools.py", line 3021, in f\n    return action(*a, **b)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/connections.py", line 26, in search\n    rows=  db((db.auth_user.id==request.args[0])).select()\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 9966, in select\n    return adapter.select(self.query,fields,attributes)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 2248, in select\n    return super(SQLiteAdapter, self).select(query, fields, attributes)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1691, in select\n    sql = self._select(query, fields, attributes)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1601, in _select\n    sql_w = \' WHERE \' + self.expand(query) if query else \'\'\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1373, in expand\n    return op(first, second, **optional_args)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1283, in EQ\n    self.expand(second, first.type))\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1383, in expand\n    return str(self.represent(expression,field_type))\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\dal.py", line 1822, in represent\n    return str(long(obj))\nValueError: invalid literal for long() with base 10: \'tifa\'\n'
+p11
+s.

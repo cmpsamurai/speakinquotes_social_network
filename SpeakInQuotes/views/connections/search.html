@@ -1,0 +1,61 @@
+{{left_sidebar_enabled,right_sidebar_enabled=True,False}}
+{{extend 'layout.html'}}
+
+
+<fieldset>
+	<legend>
+	User Search
+	</legend>
+	{{=user_search_box}}
+	<legend>
+	Search Results for :  {{=request.args[0]}}
+	</legend>
+	{{if Connections:}}
+	
+			
+				<table style="width:100%;">
+				<tr>
+				{{for i in Connections:}}
+						
+						<td style="width:25%; text-align:center;">
+						
+						{{if Connections[i]['profile_picture']:}}
+						<img src="{{=URL('default','download',args=(Connections[i]['profile_picture']))}}" style="width:100px; height:100px;">
+						{{else:}}
+						<img src="{{=URL('static','images/question.png')}}" style="width:100px; height:100px;" >
+						{{pass}}
+						</br>
+						{{=A(name_of(Connections[i]['id']),_href=URL(request.application ,'profile','index',args=[Connections[i]['id']],extension=False),)}}
+						</td>
+				{{pass}}
+				
+				
+				</table>
+	{{pass}}
+</fieldset>
+ 
+
+
+
+
+
+{{block left_sidebar}}
+<b>{{=T('Your User Profile')+" : "}}</b>
+</br>
+{{if auth.user.profile_picture:}}
+<img src="{{=URL('default','download',args=(auth.user.profile_picture))}}" style="width:100px; height:100px;";>
+{{else:}}
+<img src="{{=URL('static','images/question.png')}}" style="width:100px; height:100px;" >
+{{pass}}
+</br>
+</br>
+<B>
+{{=auth.user.first_name+" "+ auth.user.last_name}}
+</B>
+</br>
+<b>
+{{=auth.user.gender}}
+</b>
+</br>
+
+{{end}}

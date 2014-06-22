@@ -1,0 +1,52 @@
+{{extend 'layout.html'}}
+<ul>
+{{for i,notification in enumerate(Notifications):}}
+{{if i==items_per_page: break}}
+
+<li>
+		<strong>
+		
+		{{if notification.not_type=="new_quote":}}
+			{{if notification.seen==False:}}
+			[New]
+			{{pass}}
+			
+			User 
+			{{=A(name_of(notification.not_origin),_href=URL(request.application ,'profile','index',args=[notification.not_origin],extension=False),)}}
+			has posted a new Quote in the category
+			{{=A(db.quotes(notification.not_story).category.name,_href=URL(request.application ,'quotes','view',args=[notification.not_story],extension=False),)}}
+			 " {{=db.quotes(notification.not_story).body[0:40]}}... "
+			
+		{{pass}}
+		
+		{{if notification.not_type=="new_comment":}}
+			{{if notification.seen==False:}}
+			[New]
+			{{pass}}
+			
+			User 
+			{{=A(name_of(notification.not_origin),_href=URL(request.application ,'profile','index',args=[notification.not_origin],extension=False),)}}
+			has commented on the quote 
+			" 
+			{{=A(db.quotes(notification.not_story).body[0:40],_href=URL(request.application ,'quotes','view',args=[notification.not_story],extension=False),)}}
+			..."
+			
+		{{pass}}
+		-{{if notification.posted_on: }}
+		{{=pretty_date(notification.posted_on)}}
+		{{pass}}
+		</br>
+		</strong>
+</li>
+
+</br>
+{{pass}}
+</ul>
+{{if page:}}
+{{=A('Previous',_href=URL(args=[page-1]),cid=request.cid)}}
+{{pass}}
+
+{{if len(Notifications)>items_per_page:}}
+{{=A('Next',_href=URL(args=[page+1]),cid=request.cid)}}
+
+{{pass}}

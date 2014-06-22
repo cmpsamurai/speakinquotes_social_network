@@ -1,0 +1,420 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.UnboundLocalError'> local variable 'rows' referenced before assignment"
+p3
+sS'layer'
+p4
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/quotes.py'
+p5
+sS'code'
+p6
+S'# coding: utf8\n@auth.requires_login()\ndef index(): \n\tresponse.title=T("Quotes Zone")\n\tresponse.subtitle=T("Quotes Have New Meanings")\n\tcategories = cache.ram(\'categories\',lambda:db(db.category).select(orderby=db.category.ordernono).as_dict(),1800)\n\t#categories=db(db.category).select(orderby=db.category.ordernono)\n\treturn locals()\n\n\n\n         \t\n@auth.requires_login()\t\ndef create():\n\tresponse.title=T("Create Quote")\n\tresponse.subtitle=T("Share Your Quote With the world")\n\tdb.quotes.is_user.default=True\n\tdb.quotes.approved.default=True\n\tdb.quotes.posted_by.default=auth.user\n\tdb.quotes.posted_on.default=request.now\n\tdb.quotes.author.readable=db.quotes.author.writable=True\n\tquote_create = SQLFORM(db.quotes)\n\tumyfollowers = db(db.link.target==me).select().as_dict()\t\t\n\tif quote_create.process(onvalidation=update_category).accepted:\n\t\tfor follower in umyfollowers:\n\t\t\tif not ( myfollowers[follower][\'id\'] ==me):\n\t\t\t\tdb.notifications.insert(not_story=quote_create.vars.id , posted_on=request.now,not_origin=me ,not_target=myfollowers[follower][\'id\'],seen=False,not_type="new_quote")\n\t\tredirect(URL(\'quotes\',\'view\',args=(str(quote_create.vars.id))))\n\treturn locals()\n\t\n@auth.requires_login()\t\ndef update_category(form):\n\tif  form.vars.subcategory:\n\t\t db.quotes.category.default=str(form.vars.category_name) \n\telse:\n\t\tform.errors.subcategory = T(\'must insert a value\')\n\t\t  \n\n@auth.requires_login()\ndef edit():\n    experience=db.experience(request.args(0))\n    if (experience==None or experience.posted_by!=me):\n        redirect(URL(\'experiences\',\'view\',args=(a0)))\n    db.experience.subcategory.writable = False \n    form = SQLFORM(db.experience,a0,showid = False,deletable=True)\n    \n    if form.process().accepted:\n    \n        experience=db.experience(a0)\n        if experience:\n            redirect(URL(\'experiences\',\'view\',args=(str(form.vars.id))))\n        else:\n            redirect(URL(\'experiences\',\'index\'))\n    return locals()\n    \n\n\n@auth.requires_login()\ndef view():\n\tquote=db.quotes(request.args(0))\n\tif(quote==None or quote.approved==False):\n\t\tredirect(URL(\'quotes\',\'index\'))\n\tsession.curr_category=quote.category\n\tsession.curr_subcategory=quote.subcategory\n\tprevious_vote=db.quotes_favorite(fav_quote=request.args(0),posted_by=me)\n\tprevious_seen= db((db.notifications.not_story==request.args(0))&(db.notifications.not_target==me)).select()\n\tif previous_seen:\n\t\tfor story in previous_seen:\n\t\t\tdb(db.notifications.id == story.id).update(seen=True)\n\treturn locals()\n\n\n@auth.requires_login()\ndef post():\n\tcomment_box=get_quotes_comment_box(request.args(0))\n\tquote_comments=db((db.quotes_comment.qid==request.args(0))).select(limitby=(0,40), orderby=db.quotes_comment.posted_on)\n\tif(comment_box).accepted:\n\t\tstory=db.quotes(request.args(0))\n\t\tval=story.num_comments\n\t\tif val==None: val=0\n\t\tval=val+1\n\t\tstory.update_record(num_comments=val)\n\t\t\n\t\tif not (story.posted_by==me):\n\t\t\tprevious_notification=db((db.notifications.not_story==request.args(0))&(db.notifications.not_origin==me) & (db.notifications.not_type=="new_comment")& (db.notifications.not_target==story.posted_by)).select()\n\t\t\tif not (previous_notification):\n\t\t\t\tdb.notifications.insert(not_story=story.id , posted_on=request.now,not_origin=me ,not_target=story.posted_by,seen=False,not_type="new_comment")\n\t\t\telse:\n\t\t\t\tdb(db.notifications.id == previous_notification[0].id).update(seen=False,posted_on=request.now)\n\t\t\t\tdb.commit()\n\t\tfor commenter in quote_comments:\n\t\t\t\t\tif not(commenter.posted_by==me):\n\t\t\t\t\t\tprevious_notification=db((db.notifications.not_story==request.args(0))&(db.notifications.not_origin==me) & (db.notifications.not_type=="new_comment")& (db.notifications.not_target==commenter.posted_by)).select()\n\t\t\t\t\t\tif not (previous_notification):\n\t\t\t\t\t\t\tdb.notifications.insert(not_story=story.id , posted_on=request.now,not_origin=me ,not_target=commenter.posted_by,seen=False,not_type="new_comment")\n\t\t\t\t\t\telse:\n\t\t\t\t\t\t\tdb(db.notifications.id == previous_notification[0].id).update(seen=False,posted_on=request.now)\n\t\t\t\t\t\t\t \t\n\t\n\treturn locals()\n\n\n\n  \n@auth.requires_login()\ndef List_Quotes():\n    if len(request.args)>2: \n\t\tpage=int(request.args[2])\n    else: page=0\n    items_per_page=NUM_QUOTES_INPAGE\n    limitby=(page*items_per_page,(page+1)*items_per_page+1)\n    #rows=db((db.quotes.subcategory==request.args[0])& (db.quotes.approved==True)).select(limitby=limitby, orderby=~db.quotes.posted_on)\n    print str(request.args[0])\n    if str(request.args[0])==\'user\':\n\t\trows = cache.ram(\'userquotesinsubcategory\'+request.args[1]+"-"+str(page),lambda:db((db.quotes.subcategory==request.args[1])& (db.quotes.approved==True) & (db.quotes.is_user==True)).select(limitby=limitby, orderby=~db.quotes.posted_on).as_dict(),60)\n    elif str(request.args[0])==\'famous\':\n\t\trows = cache.ram(\'famousquotesinsubcategory\'+request.args[1]+"-"+str(page),lambda:db((db.quotes.subcategory==request.args[1])& (db.quotes.approved==True) & (db.quotes.is_user==False)).select(limitby=limitby, orderby=~db.quotes.posted_on).as_dict(),60)\n    return dict(Quotes=rows,page=page,items_per_page=items_per_page)\n\n\n@auth.requires_login()\t\ndef Fetch_Subcategoris():\n\tsubcategories = cache.ram(\'subcategories\'+request.args(0),lambda:db(db.subcategory.category==request.args(1)).select().as_dict(),1800)\n\treturn locals();\n\t\n\t\n\n    \n@auth.requires_login()\ndef favorite():\n    if not request.env.request_method==\'POST\': raise HTTP(400)\n    quote_id,Mode=request.args(0),request.args(1)\n    \n    previous_vote=db.quotes_favorite(fav_quote=quote_id,posted_by=auth.user.id)\n    quote=db.quotes(db.quotes.id==quote_id)\n    value=quote.favorites\n\n    if previous_vote==None:\n        if value==None:\n            value=1\n        else:\n            value=value+1\n        db(db.quotes.id == quote_id).update(favorites=value)\n        db.quotes_favorite.insert(fav_quote=quote_id , posted_on=request.now,posted_by=me,category=quote.category)\n        db.commit()\n        return "jQuery(\'#favorite\').html(\'%s\');"%(T(\'Unfavorite\')) \n    else:\n        value=value-1\n        db(db.quotes.id == quote_id).update(favorites=value)\n        db(db.quotes_favorite.fav_quote==quote_id , db.quotes_favorite.posted_by==me).delete()\n        db.commit()\n        return "jQuery(\'#favorite\').html(\'%s\');"%(T(\'Favorite\')) \n        \n        \n@auth.requires_login()\ndef delete_comment():\n    #if not request.env.request_method==\'POST\': raise HTTP(400)\n    comment_id=request.args(0)\n    comment=db.quotes_comment(db.quotes_comment.id==comment_id)\n    quote=db.quotes(db.quotes.id==comment.qid)\n    value=quote.num_comments\n    if comment.posted_by==me:\n        db(db.quotes_comment.id==comment_id , db.quotes_favorite.posted_by==me).delete()\n        value=value-1\n        db(db.quotes.id == quote.id).update(num_comments=value)\n        db.commit()\n        return "jQuery(\'#comment_delete-"+comment_id+"\').parent().html(\'%s\');"%(T(\'Deleted\')) \n\n@auth.requires_login()    \ndef search():\n\tresponse.title=T("Search Quotes")\n\tresponse.subtitle=T("Search The Quotes Database")\n\tif \'view\' in request.args:\n\t\tredirect(URL(\'quotes\',\'view\',args=(request.args(2))))\n\n\tform=get_quotes_search_form()\n\treturn locals()\n\n\nresponse._vars=response._caller(List_Quotes)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__hash__'
+p12
+S"<method-wrapper '__hash__' of exceptions.UnboundLocalError object>"
+p13
+sS'__setattr__'
+p14
+S"<method-wrapper '__setattr__' of exceptions.UnboundLocalError object>"
+p15
+sS'__reduce_ex__'
+p16
+S'<built-in method __reduce_ex__ of exceptions.UnboundLocalError object>'
+p17
+sS'__getslice__'
+p18
+S"<method-wrapper '__getslice__' of exceptions.UnboundLocalError object>"
+p19
+sS'__getitem__'
+p20
+S"<method-wrapper '__getitem__' of exceptions.UnboundLocalError object>"
+p21
+sS'__setstate__'
+p22
+S'<built-in method __setstate__ of exceptions.UnboundLocalError object>'
+p23
+sS'__reduce__'
+p24
+S'<built-in method __reduce__ of exceptions.UnboundLocalError object>'
+p25
+sS'__str__'
+p26
+S"<method-wrapper '__str__' of exceptions.UnboundLocalError object>"
+p27
+sS'__format__'
+p28
+S'<built-in method __format__ of exceptions.UnboundLocalError object>'
+p29
+sS'__getattribute__'
+p30
+S"<method-wrapper '__getattribute__' of exceptions.UnboundLocalError object>"
+p31
+sS'__class__'
+p32
+S"<type 'exceptions.UnboundLocalError'>"
+p33
+sS'__unicode__'
+p34
+S'<built-in method __unicode__ of exceptions.UnboundLocalError object>'
+p35
+sS'__delattr__'
+p36
+S"<method-wrapper '__delattr__' of exceptions.UnboundLocalError object>"
+p37
+sS'__subclasshook__'
+p38
+S'<built-in method __subclasshook__ of type object>'
+p39
+sS'__repr__'
+p40
+S"<method-wrapper '__repr__' of exceptions.UnboundLocalError object>"
+p41
+sS'args'
+p42
+S'("local variable \'rows\' referenced before assignment",)'
+p43
+sS'__dict__'
+p44
+S'{}'
+p45
+sS'__sizeof__'
+p46
+S'<built-in method __sizeof__ of exceptions.UnboundLocalError object>'
+p47
+sS'__doc__'
+p48
+S"'Local name referenced but not bound to a value.'"
+p49
+sS'__init__'
+p50
+S"<method-wrapper '__init__' of exceptions.UnboundLocalError object>"
+p51
+sS'__new__'
+p52
+S'<built-in method __new__ of type object>'
+p53
+ssS'evalue'
+p54
+S"local variable 'rows' referenced before assignment"
+p55
+sS'request'
+p56
+cgluon.html
+XML_unpickle
+p57
+(S's\x00W\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">ajax</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">application</td><td valign="top">:</td><td><div>SpeakInQuotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">args</td><td valign="top">:</td><td><div><table><tr><td><div>1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x06AFF4C0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cid</td><td valign="top">:</td><td><div>c929476493223</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">client</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">controller</td><td valign="top">:</td><td><div>quotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_admin</td><td valign="top">:</td><td><div>127.0.0.1-5b37bae1-2854-412f-a0ad-6a113542ae78<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_speakinquotes</td><td valign="top">:</td><td><div>127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">env</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py\\\\applications\\\\SpeakInQuotes\\\\&#x27;, &#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py\\\\applications\\\\admin\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_options</td><td valign="top">:</td><td><div>&lt;Values at 0x2799418: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;Laptop&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;import_models&#x27;: False, &#x27;winservice&#x27;: &#x27;&#x27;, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;profiler_filename&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;scheduler_groups&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;interfaces&#x27;: None, &#x27;minthreads&#x27;: None, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept</td><td valign="top">:</td><td><div>*/*</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_encoding</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_language</td><td valign="top">:</td><td><div>en-US,en;q=0.8,ar-EG;q=0.5,ar;q=0.3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_connection</td><td valign="top">:</td><td><div>Keep-Alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_cookie</td><td valign="top">:</td><td><div>session_id_speakinquotes=127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d; session_id_admin=127.0.0.1-5b37bae1-2854-412f-a0ad-6a113542ae78</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_dnt</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_host</td><td valign="top">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_referer</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/SpeakInQuotes/quotes/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_user_agent</td><td valign="top">:</td><td><div>Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_web2py_component_element</td><td valign="top">:</td><td><div>c929476493223</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_web2py_component_location</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/SpeakInQuotes/quotes/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_x_requested_with</td><td valign="top">:</td><td><div>XMLHttpRequest</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>Laptop</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>192.168.1.5</div></td></tr><tr><td><div>2001:0:4137:9e76:101a:146b:3f57:fefa</div></td></tr><tr><td><div>Laptop.localdomain</div></td></tr><tr><td><div>fe80::6dea:134e:e68d:1aab%21</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>fe80::101a:146b:3f57:fefa%13</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path_info</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">query_string</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_addr</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_port</td><td valign="top">:</td><td><div>64471</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_method</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_uri</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">script_name</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_name</td><td valign="top">:</td><td><div>Laptop</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_port</td><td valign="top">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_protocol</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_software</td><td valign="top">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_original_uri</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_path</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div>2.4.7-stable+timestamp.2013.05.24.17.48.47</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_errors</td><td valign="top">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x013C50D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_file_wrapper</td><td valign="top">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02753730&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_input</td><td valign="top">:</td><td><div>&lt;socket._fileobject object at 0x066D2F70&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_url_scheme</td><td valign="top">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_version</td><td valign="top">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">extension</td><td valign="top">:</td><td><div>load</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">folder</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">function</td><td valign="top">:</td><td><div>List_Quotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">get_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">global_settings</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py\\\\applications\\\\SpeakInQuotes\\\\&#x27;, &#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py\\\\applications\\\\admin\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_options</td><td valign="top">:</td><td><div>&lt;Values at 0x2799418: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;Laptop&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;E:\\\\projects\\\\Repos\\\\speakinquotes\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;import_models&#x27;: False, &#x27;winservice&#x27;: &#x27;&#x27;, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;profiler_filename&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;scheduler_groups&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;interfaces&#x27;: None, &#x27;minthreads&#x27;: None, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>Laptop</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>192.168.1.5</div></td></tr><tr><td><div>2001:0:4137:9e76:101a:146b:3f57:fefa</div></td></tr><tr><td><div>Laptop.localdomain</div></td></tr><tr><td><div>fe80::6dea:134e:e68d:1aab%21</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>fe80::101a:146b:3f57:fefa%13</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div>2.4.7-stable+timestamp.2013.05.24.17.48.47</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_https</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_local</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_restful</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">now</td><td valign="top">:</td><td><div>datetime.datetime(2013, 6, 9, 11, 30, 20, 234000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">post_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_args</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_extension</td><td valign="top">:</td><td><div>load</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">url</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">utcnow</td><td valign="top">:</td><td><div>datetime.datetime(2013, 6, 9, 9, 30, 20, 234000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">uuid</td><td valign="top">:</td><td><div>SpeakInQuotes/127.0.0.1.2013-06-09.11-30-20.c3daae74-3d7b-4743-b6e5-680629aad1dd</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">environ</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT</td><td valign="top">:</td><td><div>*/*</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_ENCODING</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_LANGUAGE</td><td valign="top">:</td><td><div>en-US,en;q=0.8,ar-EG;q=0.5,ar;q=0.3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_CONNECTION</td><td valign="top">:</td><td><div>Keep-Alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_COOKIE</td><td valign="top">:</td><td><div>session_id_speakinquotes=127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d; session_id_admin=127.0.0.1-5b37bae1-2854-412f-a0ad-6a113542ae78</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_DNT</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_HOST</td><td valign="top">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_REFERER</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/SpeakInQuotes/quotes/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_USER_AGENT</td><td valign="top">:</td><td><div>Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_WEB2PY_COMPONENT_ELEMENT</td><td valign="top">:</td><td><div>c929476493223</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_WEB2PY_COMPONENT_LOCATION</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/SpeakInQuotes/quotes/index</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_X_REQUESTED_WITH</td><td valign="top">:</td><td><div>XMLHttpRequest</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">PATH_INFO</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">QUERY_STRING</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_ADDR</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_PORT</td><td valign="top">:</td><td><div>64471</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_METHOD</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_URI</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SCRIPT_NAME</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_NAME</td><td valign="top">:</td><td><div>Laptop</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PORT</td><td valign="top">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PROTOCOL</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_SOFTWARE</td><td valign="top">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">WEB2PY_ORIGINAL_URI</td><td valign="top">:</td><td><div>/SpeakInQuotes/quotes/List_Quotes.load/1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.errors</td><td valign="top">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x013C50D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.file_wrapper</td><td valign="top">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02753730&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.input</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x06AFF4C0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.url_scheme</td><td valign="top">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.version</td><td valign="top">:</td><td><div>1</div></td></tr></table></div></td></tr></table></div></td></tr></table></div>'
+tRp58
+sS'frames'
+p59
+(lp60
+(dp61
+S'file'
+p62
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\restricted.py'
+p63
+sS'dump'
+p64
+(dp65
+S'environment'
+p66
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, 'CAT': <class 'gluon.html.CAT'>, 'CENTER': <class 'gluon.html.CENTER'>, ...}"
+p67
+sS'ccode'
+p68
+S'<code object <module> at 06E23728, file "E:\\proj...ons\\SpeakInQuotes\\controllers/quotes.py", line 2>'
+p69
+ssS'lnum'
+p70
+I212
+sS'lines'
+p71
+(dp72
+I207
+S'    try:'
+p73
+sI208
+S'        if isinstance(code, types.CodeType):'
+p74
+sI209
+S'            ccode = code'
+p75
+sI210
+S'        else:'
+p76
+sI211
+S'            ccode = compile2(code, layer)'
+p77
+sI212
+S'        exec ccode in environment'
+p78
+sI213
+S'    except HTTP:'
+p79
+sI214
+S'        raise'
+p80
+sI215
+S'    except RestrictedError:'
+p81
+sI216
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p82
+ssS'call'
+p83
+S"(code='# coding: utf8\\n@auth.requires_login()\\ndef index(...)\\n\\n\\nresponse._vars=response._caller(List_Quotes)\\n', environment={'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, 'CAT': <class 'gluon.html.CAT'>, 'CENTER': <class 'gluon.html.CENTER'>, ...}, layer=r'E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/quotes.py')"
+p84
+sS'func'
+p85
+S'restricted'
+p86
+sa(dp87
+g62
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers\\quotes.py'
+p88
+sg64
+(dp89
+sg70
+I180
+sg71
+(dp90
+I169
+S'@auth.requires_login()'
+p91
+sI170
+S'def search():'
+p92
+sI171
+S'\tresponse.title=T("Search Quotes")'
+p93
+sI172
+S'\tresponse.subtitle=T("Search The Quotes Database")'
+p94
+sI173
+S"\tif 'view' in request.args:"
+p95
+sI174
+S"\t\tredirect(URL('quotes','view',args=(request.args(2))))"
+p96
+sI175
+S''
+sI176
+S'\tform=get_quotes_search_form()'
+p97
+sI177
+S'\treturn locals()'
+p98
+sI178
+S''
+ssg83
+S'()'
+p99
+sg85
+S'<module>'
+p100
+sa(dp101
+g62
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\globals.py'
+p102
+sg64
+(dp103
+S'self'
+p104
+S'undefined'
+p105
+sS'f'
+S'<function List_Quotes>'
+p106
+ssg70
+I194
+sg71
+(dp107
+I192
+S"        self.delimiters = ('{{', '}}')"
+p108
+sI193
+S'        self._vars = None'
+p109
+sI194
+S'        self._caller = lambda f: f()'
+p110
+sI195
+S'        self._view_environment = None'
+p111
+sI196
+S'        self._custom_commit = None'
+p112
+sI197
+S'        self._custom_rollback = None'
+p113
+sI198
+S''
+sI189
+S'        self.menu = []             # used by the default view layout'
+p114
+sI190
+S'        self.files = []            # used by web2py_ajax.html'
+p115
+sI191
+S'        self.generic_patterns = []  # patterns to allow generic views'
+p116
+ssg83
+S'(f=<function List_Quotes>)'
+p117
+sg85
+S'<lambda>'
+p118
+sa(dp119
+g62
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\tools.py'
+p120
+sg64
+(dp121
+S'action'
+p122
+S'<function List_Quotes>'
+p123
+sS'a'
+S'()'
+p124
+sS'b'
+g45
+ssg70
+I3021
+sg71
+(dp125
+I3016
+S'                    flag = condition'
+p126
+sI3017
+S'                if not flag:'
+p127
+sI3018
+S'                    current.session.flash = self.messages.access_denied'
+p128
+sI3019
+S'                    return call_or_redirect('
+p129
+sI3020
+S'                        self.settings.on_failed_authorization)'
+p130
+sI3021
+S'                return action(*a, **b)'
+p131
+sI3022
+S'            f.__doc__ = action.__doc__'
+p132
+sI3023
+S'            f.__name__ = action.__name__'
+p133
+sI3024
+S'            f.__dict__.update(action.__dict__)'
+p134
+sI3025
+S'            return f'
+p135
+ssg83
+S'(*a=(), **b={})'
+p136
+sg85
+S'f'
+sa(dp137
+g62
+S'E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers\\quotes.py'
+p138
+sg64
+(dp139
+S'auth.requires_login'
+p140
+S'<bound method Auth.requires_login of <gluon.tools.Auth object>>'
+p141
+sS'global auth'
+p142
+S'<gluon.tools.Auth object>'
+p143
+ssg70
+I118
+sg71
+(dp144
+I113
+S'    print str(request.args[0])'
+p145
+sI114
+S"    if str(request.args[0])=='user':"
+p146
+sI115
+S'\t\trows = cache.ram(\'userquotesinsubcategory\'+request.args[1]+"-"+str(page),lambda:db((db.quotes.subcategory==request.args[1])& (db.quotes.approved==True) & (db.quotes.is_user==True)).select(limitby=limitby, orderby=~db.quotes.posted_on).as_dict(),60)'
+p147
+sI116
+S"    elif str(request.args[0])=='famous':"
+p148
+sI117
+S'\t\trows = cache.ram(\'famousquotesinsubcategory\'+request.args[1]+"-"+str(page),lambda:db((db.quotes.subcategory==request.args[1])& (db.quotes.approved==True) & (db.quotes.is_user==False)).select(limitby=limitby, orderby=~db.quotes.posted_on).as_dict(),60)'
+p149
+sI118
+S'    return dict(Quotes=rows,page=page,items_per_page=items_per_page)'
+p150
+sI119
+S''
+sI120
+S''
+sI121
+S'@auth.requires_login()'
+p151
+sI122
+S'def Fetch_Subcategoris():'
+p152
+ssg83
+S'()'
+p153
+sg85
+S'List_Quotes'
+p154
+sasS'pyver'
+p155
+S'Python 2.7.2: C:\\Python27\\python.exe (prefix: C:\\Python27)'
+p156
+sS'session'
+p157
+g57
+(S's\xcd\n\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">auth</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">expiration</td><td valign="top">:</td><td><div>3600</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">hmac_key</td><td valign="top">:</td><td><div>58636b48-aaba-4930-bc5a-e6822cb976bd</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_visit</td><td valign="top">:</td><td><div>datetime.datetime(2013, 6, 9, 11, 27, 33, 212000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remember</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">user</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">dob</td><td valign="top">:</td><td><div>datetime.date(2013, 6, 11)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">email</td><td valign="top">:</td><td><div>digital_ninja01@hotmail.com</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">first_name</td><td valign="top">:</td><td><div>Moustafa</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gender</td><td valign="top">:</td><td><div>Male</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">id</td><td valign="top">:</td><td><div>3L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_name</td><td valign="top">:</td><td><div>Mahmoud</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">profile_picture</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">registration_id</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">registration_key</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">reset_password_key</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">username</td><td valign="top">:</td><td><div>tifa</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">user_groups</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">3</td><td valign="top">:</td><td><div>manager</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">curr_category</td><td valign="top">:</td><td><div>1L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">curr_subcategory</td><td valign="top">:</td><td><div>1L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">flash</td><td valign="top">:</td><td><div>None</div></td></tr></table></div>'
+tRp158
+sS'etype'
+p159
+S"<type 'exceptions.UnboundLocalError'>"
+p160
+sS'date'
+p161
+S'Sun Jun 09 11:30:21 2013'
+p162
+sS'response'
+p163
+g57
+(S's\xf9\x19\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x06AFF9A0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_speakinquotes</td><td valign="top">:</td><td><div>127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">delimiters</td><td valign="top">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">files</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">flash</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">generic_patterns</td><td valign="top">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">google_analytics_id</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">headers</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">X-Powered-By</td><td valign="top">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">logo</td><td valign="top">:</td><td><div><a class="brand" href="/SpeakInQuotes/default/index.load"><b>SpeakInQuotes</b></a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">menu</td><td valign="top">:</td><td><div><table><tr><td><div><table><tr><td><div>Home</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/SpeakInQuotes/default/index.load</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Profile</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/SpeakInQuotes/profile/index.load/3</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Quotes Zone</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/SpeakInQuotes/quotes/index.load</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>My Quotes</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/SpeakInQuotes/myquotes/index.load</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>My Connections</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/SpeakInQuotes/connections/index.load</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">meta</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">author</td><td valign="top">:</td><td><div>Moustafa Mahmoud &lt;Moustafa.Mahmoud.Fathy@outlook.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">description</td><td valign="top">:</td><td><div>SpeakInQuotes allows you to express your feelings using quotes and connects you with other people who love quotes like you you can share the knowledge and grow your ideas together , it also helps you connect to people with same mentality as you . </div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">models_to_run</td><td valign="top">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^quotes/\\w+\\.py$</div></td></tr><tr><td><div>^quotes/List_Quotes/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">postprocessing</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_cookie_expires</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_data_name</td><td valign="top">:</td><td><div>session_data_speakinquotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_file</td><td valign="top">:</td><td><div>&lt;open file &#x27;E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\sessions\\127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d&#x27;, mode &#x27;rb+&#x27; at 0x06A1B230&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_filename</td><td valign="top">:</td><td><div>E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\sessions\\127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id</td><td valign="top">:</td><td><div>127.0.0.1-3077ad31-9ad3-4190-8cc1-db95ea9f880d</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_name</td><td valign="top">:</td><td><div>session_id_speakinquotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_locked</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_new</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_storage_type</td><td valign="top">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">status</td><td valign="top">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">subtitle</td><td valign="top">:</td><td><div>The Quotes Sharing Network!</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">title</td><td valign="top">:</td><td><div>SpeakInQuotes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">view</td><td valign="top">:</td><td><div>quotes/List_Quotes.load</div></td></tr></table></div>'
+tRp164
+sS'locals'
+p165
+(dp166
+S'items_per_page'
+p167
+S'10'
+p168
+sS'page'
+p169
+S'0'
+sS'limitby'
+p170
+S'(0, 11)'
+p171
+sssS'traceback'
+p172
+S'Traceback (most recent call last):\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\restricted.py", line 212, in restricted\n    exec ccode in environment\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/quotes.py", line 180, in <module>\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\globals.py", line 194, in <lambda>\n    self._caller = lambda f: f()\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\gluon\\tools.py", line 3021, in f\n    return action(*a, **b)\n  File "E:\\projects\\Repos\\speakinquotes\\web2py\\applications\\SpeakInQuotes\\controllers/quotes.py", line 118, in List_Quotes\n    return dict(Quotes=rows,page=page,items_per_page=items_per_page)\nUnboundLocalError: local variable \'rows\' referenced before assignment\n'
+p173
+s.

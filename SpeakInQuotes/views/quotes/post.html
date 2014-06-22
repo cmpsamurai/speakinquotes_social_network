@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+{{for comment in quote_comments:}}
+<article class="comment_article">
+            <header>
+            <strong>
+            <a href="{{=URL('profile','index',args=[comment.posted_by],extension=False)}}">{{=name_of(comment.posted_by)}}</a>
+            </strong>
+            </header>
+            <section>
+            {{=comment.body}}
+            </section>
+            <footer>
+            	<i><b>{{=T('Posted : ')+pretty_date(comment.posted_on)}}</b></i>
+            	{{if comment.posted_by==me:}}
+					<a id="comment_delete-{{=comment.id}}" onclick="ajax('{{=URL('delete_comment', args=(comment.id))}}', [],  ':eval')"> {{=T('Delete')}}</a>
+            	{{pass}}
+            	
+            </footer>
+        </article>
+        </br>
+{{pass}}
+{{=comment_box}}

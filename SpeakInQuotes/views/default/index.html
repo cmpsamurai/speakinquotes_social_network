@@ -1,0 +1,88 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<section id="main_section" style="min-height:300px;">
+	<table >
+		<tr>
+			<td >
+			<div style="margin:0px 15px 15px 15px; text-align:center;border-radius:15px;border:1px solid gray;padding:40px; "> 	
+			<div >
+			<p style="color:#215625;font-family:georgia, serif;font-size:25px;text-align:center;">
+			<strong>
+			“In quoting others, we cite ourselves.” 
+			</strong>
+			</p>
+			
+			<p style="text-align:center;font-family:georgia, serif;color:#666600;">
+			― Julio Cortázar, Around the Day in Eighty Worlds 
+			</p>
+			</div>
+			</br>	
+			</br>	
+			<strong>
+			<p id="description" >SpeakInQuotes allows you to express your feelings using quotes and connects you with other people who love quotes like you you can share the knowledge and grow your ideas together , it also helps you connect to people with same mentality as you .
+			</strong>
+			
+			</br></br>
+		<article>
+						
+			
+	
+			
+			</br>
+			
+			
+			<p>
+			<h3 style="color:#08c;"> SpeakInQuotes Allows you to:</h3>
+			<ul>
+			<li>
+				<strong>
+			Read Famous Quotes by Historical Authors
+				</strong>
+			</li>
+			</br>
+			<li>
+				<strong>
+			Post and Share Your Own Quotes with the users of the website
+				</strong>
+			</li>
+			</br>
+			<li>
+				<strong>
+			Connect to users and discuss the Quotes
+				</strong>
+			</li>
+			</br>
+			</ul>
+			</p>
+			
+			
+			
+			<div id="Signup-Button" style="text-align:center;">
+				<a style="border-radius:10px; font-size:20px; font-family:georgia, serif;" class="btn btn-navbar" href="{{=URL('default','user',args=('register'))}}">
+				<img src="{{=URL('static','images/join.png')}}"  >
+				{{=T('Join SpeakInQuotes')}}
+				</a>
+
+			</a>
+			
+		   
+	  
+			</div>
+		
+			<footer>
+				
+			</footer>
+		</article>
+		</div>
+		</td>
+		
+		<td >
+			<div style="margin:0 0 0 15px;text-align:center;border-radius:15px;border:1px solid gray;padding:10px 10px 10px 40px; min-height:200px;">
+		<h3> Do you have an Account ?</h3>
+    {{=auth.login()}}
+		</div>
+    </td>
+    </tr>
+    </table>
+</section> 

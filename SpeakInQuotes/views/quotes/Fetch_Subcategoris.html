@@ -1,0 +1,42 @@
+{{extend 'layout.html'}}
+<script>
+  $(function() {
+    $( "#itabs{{=request.args(1)}}" ).tabs().addClass( "ui-tabs-vertical ui-helper-clearfix" );
+    $( "#itabs{{=request.args(1)}} li" ).removeClass( "ui-corner-top" ).addClass( "ui-corner-left" );
+    {{if session.curr_subcategory:}}
+    $("#itabs{{=request.args(1)}}").tabs("select", "#itabs{{=request.args(1)+"-"+str(int(session.curr_subcategory)+1)}}");
+    {{pass}}
+    
+  });
+</script>
+
+  
+<div id="itabs{{=request.args(1)}}">
+  <ul>
+	  
+	  {{for i in subcategories:}}
+	  
+		 <li><a href="#itabs{{=request.args(1)+"-"+str(i+1)}}">{{=subcategories[i]['name']}}</a></li>
+	  {{pass}}
+	  
+  </ul>
+  
+      {{for i in subcategories:}}
+	  
+		 <div id="itabs{{=request.args(1)+"-"+str(i+1)}}">
+			{{=LOAD('quotes','List_Quotes.load',args=[request.args[0],subcategories[i]['id']],ajax=True)}}
+		  </div>
+	  {{pass}}
+	  
+	
+	  
+</div>
+ 
+
+
+ 
+
+
+
+
+

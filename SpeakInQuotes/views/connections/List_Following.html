@@ -1,0 +1,50 @@
+{{extend 'layout.html'}}
+{{index=0}}
+<legend>
+People That I am Following
+({{=len(Connections)}})
+</legend>
+
+<table style="width:100%;">
+<tr>
+{{for i in Connections:}}
+        {{if index==items_per_page: break}}
+		{{if not(index%4==0) or index==0:}}
+			<td style="width:25%; text-align:center;">
+			
+			{{if db.auth_user(Connections[i]['target']).profile_picture:}}
+			<img src="{{=URL('default','download',args=(db.auth_user(Connections[i]['target']).profile_picture))}}" style="width:100px; height:100px;">
+			{{else:}}
+			<img src="{{=URL('static','images/question.png')}}" style="width:100px; height:100px;" >
+			{{pass}}
+			</br>
+			{{=A(name_of(Connections[i]['target']),_href=URL(request.application ,'profile','index',args=[Connections[i]['target']],extension=False),)}}
+			</td>
+		{{else:}}
+			
+			</tr><tr>
+			<td style="width:25%; text-align:center;">
+			
+				{{if db.auth_user(Connections[i]['target']).profile_picture:}}
+				<img src="{{=URL('default','download',args=(db.auth_user(Connections[i]['target']).profile_picture))}}" style="width:100px; height:100px;">
+				{{else:}}
+				<img src="{{=URL('static','images/question.png')}}" style="width:100px; height:100px;" >
+				{{pass}}
+				</br>
+				{{=A(name_of(Connections[i]['target']),_href=URL(request.application ,'profile','index',args=[Connections[i]['target']],extension=False),)}}
+				</td>
+		{{pass}}
+{{index=index+1}}
+{{pass}}
+</table>
+
+
+{{if page:}}
+{{=A('Previous',_href=URL(args=[request.args[0],page-1]),cid=request.cid)}}
+{{pass}}
+
+{{if len(Connections)>items_per_page:}}
+{{=A('Next',_href=URL(args=[request.args[0],page+1]),cid=request.cid)}}
+
+
+{{pass}}
